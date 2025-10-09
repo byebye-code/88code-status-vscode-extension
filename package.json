@@ -9,13 +9,15 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "88code-status.helloWorld",
-        "title": "Hello World"
+        "command": "88code-status.refresh",
+        "title": "88code: Refresh Balance"
       }
     ]
   },

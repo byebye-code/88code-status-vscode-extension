@@ -3,7 +3,8 @@
 import * as vscode from "vscode";
 import { readApiKey } from "./config";
 import { fetchSubscriptions } from "./api";
-import { calcActiveSum } from "./calc";
+import { calcActiveSum, calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
+import type { Subscription, SubscriptionPlan } from "./types";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -19,8 +20,10 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(refreshCmd);
 
   statusItem.show();
-  // Initial refresh
   void refreshStatus(statusItem);
+
+  const interval = setInterval(() => void refreshStatus(statusItem), 5 * 60 * 1000);
+  context.subscriptions.push({ dispose: () => clearInterval(interval) });
 }
 
 // This method is called when your extension is deactivated
@@ -28,28 +31,43 @@ export function deactivate() {}
 
 async function refreshStatus(item: vscode.StatusBarItem) {
   try {
-    // Fixed mock value for early testing
-    const mockSum = 208.2;
-    item.text = `88code 剩余 $${mockSum.toFixed(2)}`;
-    // Placeholder pipeline kept for future wiring
     const apiKey = await readApiKey();
     if (!apiKey) {
-      item.tooltip = new vscode.MarkdownString("未配置 API Key | 显示为测试固定值");
+      item.text = "剩余 $—";
+      item.tooltip = new vscode.MarkdownString("未配置 API Key");
       item.tooltip.isTrusted = true;
       return;
     }
+
+    // total credits
     const subs = await fetchSubscriptions(apiKey);
-    const sum = calcActiveSum(subs);
-    // Keep showing mock for now; the above ensures types are wired and ready
-    item.tooltip = new vscode.MarkdownString(
-      `测试模式：实际计算值 $${sum.toFixed(2)}（当前展示固定值）`
-    );
+    const active = subs.filter((s) => s.isActive);
+
+    const sum = calcTotalSum(active);
+    item.text = `剩余 $${sum.toFixed(2)}`;
+
+    item.tooltip = buildTooltip(active);
     item.tooltip.isTrusted = true;
   } catch (err) {
-    item.text = "88code 剩余 $—";
-    item.tooltip = new vscode.MarkdownString(
-      `刷新失败（测试模式）：${(err as Error)?.message ?? "未知错误"}`
-    );
+    item.text = "剩余 $—";
+    const msg = (err as Error)?.message ?? "未知错误";
+    item.tooltip = new vscode.MarkdownString(`刷新失败：${msg}`);
     item.tooltip.isTrusted = true;
   }
+}
+
+function buildTooltip(subs: Subscription[]): vscode.MarkdownString {
+  if (!subs.length) {
+    return new vscode.MarkdownString("无活跃订阅");
+  }
+  const lines = subs.map((s) => {
+    const total = calcTotalPerSub(s);
+    const cur = `$${Number(s.currentCredits).toFixed(2)}`;
+    const limit = `$${Number(s.subscriptionPlan.creditLimit).toFixed(2)}`;
+    const totalFixed = `$${total.toFixed(2)}`;
+    return `${
+      s.subscriptionPlanName || "(未命名)"
+    } 当前/上限:${cur}/${limit} | 剩余重置:${remainingResetTimes(s)} | 总量:${totalFixed}`;
+  });
+  return new vscode.MarkdownString(lines.join("\n\n"));
 }
