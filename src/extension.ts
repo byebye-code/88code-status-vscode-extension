@@ -3,8 +3,8 @@
 import * as vscode from "vscode";
 import { readApiKey } from "./config";
 import { fetchSubscriptions } from "./api";
-import { calcActiveSum, calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
-import type { Subscription, SubscriptionPlan } from "./types";
+import { calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
+import type { Subscription } from "./types";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed

@@ -1,7 +1,8 @@
 import type { Subscription } from "./types";
 
 const BASE_URL = "https://www.88code.org";
-const ENDPOINT = "/api/subscription";
+const SUB_ENDPOINT = "/api/subscription";
+const USAGE_ENDPOINT = "/api/usage";
 
 export async function fetchSubscriptions(apiKey: string): Promise<Subscription[]> {
   if (!apiKey) {
@@ -24,7 +25,7 @@ export async function fetchSubscriptions(apiKey: string): Promise<Subscription[]
   }, 8000);
 
   try {
-    const res = await fetchFn(`${BASE_URL}${ENDPOINT}`, {
+    const res = await fetchFn(`${BASE_URL}${SUB_ENDPOINT}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
