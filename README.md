@@ -1,71 +1,34 @@
-# 88code-status README
+# 88code Status（VS Code 扩展）
 
-This is the README for your extension "88code-status". After writing up a brief description, we recommend including the following sections.
+https://www.88code.org
 
-## Features
+Repo: https://github.com/byebye-code/88code-status-vscode-extension
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+一个轻量的插件，在 VS Code 右下角状态栏展示 88code 订阅余额，支持手动刷新与定时自动刷新。
 
-For example if there is an image subfolder under your extension project workspace:
+## 功能
 
-\!\[feature X\]\(images/feature-x.png\)
+- 状态栏显示：`剩余 $<sum>`，数值变化时短暂闪烁提示。
+- Tooltip：按“活跃订阅”逐条显示：`[计划名] 当前/上限:$<cur>/$<limit> | 剩余重置:<n> | 总量:$<cur + resetTimes*creditLimit>`。
+- 命令：`88code-status.refresh`（命令面板：88code: Refresh Balance）手动刷新。
+- 自动刷新：每 1 分钟刷新一次。
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 数据来源
 
-## Requirements
+https://www.88code.org
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## 金额计算
 
-## Extension Settings
+- 主显示值：对所有“活跃订阅”累加 `currentCredits + resetTimes*creditLimit`。
+- Tooltip“总量”：同上；`PAY_PER_USE` 订阅的重置次数视为 0。
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## 配置（API Key）
 
-For example:
+扩展会自动从以下位置读取 Key：
 
-This extension contributes the following settings:
+- 环境变量：`key88`、`ANTHROPIC_AUTH_TOKEN`、`OPENAI_API_KEY`
+- 配置文件：
+  - `~/.codex/auth.json` 的 `OPENAI_API_KEY`
+  - `~/.claude/settings.json` 的 `env.ANTHROPIC_AUTH_TOKEN`
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+未读取到 Key 时，状态栏显示 `剩余 $—`，Tooltip 提示“未配置 API Key”。
