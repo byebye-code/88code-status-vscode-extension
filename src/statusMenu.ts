@@ -85,7 +85,8 @@ export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMen
     return;
   }
 
-  await handleSubscriptionItem(selection.subscription, item, deps);
+  // 暂时无点击事件，未来API提供更多接口后再处理
+  return;
 }
 
 async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
@@ -95,24 +96,5 @@ async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, de
   }
   if (action === "openManage") {
     await vscode.env.openExternal(vscode.Uri.parse(MANAGE_SUBSCRIPTION_URL));
-  }
-}
-
-async function handleSubscriptionItem(sub: Subscription, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
-  const infoLines = [
-    `套餐: ${sub.subscriptionPlanName || "(未命名)"}`,
-    `当前余额: $${Number(sub.currentCredits).toFixed(2)}`,
-    `额度上限: $${Number(sub.subscriptionPlan.creditLimit).toFixed(2)}`,
-    `剩余重置次数: ${remainingResetTimes(sub)}`,
-    `周期: ${sub.billingCycleDesc || sub.billingCycle}`,
-    `总额(含重置): $${calcTotalPerSub(sub).toFixed(2)}`,
-  ];
-  const choice = await vscode.window.showInformationMessage(infoLines.join("\n"), "打开订阅管理页面", "刷新余额");
-  if (choice === "打开订阅管理页面") {
-    await vscode.env.openExternal(vscode.Uri.parse(MANAGE_SUBSCRIPTION_URL));
-    return;
-  }
-  if (choice === "刷新余额") {
-    await deps.refreshStatus(item);
   }
 }

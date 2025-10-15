@@ -53,3 +53,8 @@ export async function fetchSubscriptions(apiKey: string): Promise<Subscription[]
     clearTimeout(timeout);
   }
 }
+
+export async function fetchActiveSubscriptions(apiKey: string): Promise<Subscription[]> {
+  const subs = await fetchSubscriptions(apiKey);
+  return subs.filter((sub) => sub.isActive);
+}

@@ -1,9 +1,9 @@
 # Change Log
 
-All notable changes to the "88code-status" extension will be documented in this file.
+## v0.2.0
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+新增功能：点击状态栏会显示菜单。
 
-## [Unreleased]
+## v0.1.0
 
-- Initial release
+初版，可在右下角状态栏查看总余量，悬浮显示各套餐信息。

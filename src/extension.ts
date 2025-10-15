@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import { readApiKey } from "./config";
-import { fetchSubscriptions } from "./api";
+import { fetchActiveSubscriptions } from "./api";
 import { calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
 import { showStatusMenu } from "./statusMenu";
 import type { Subscription } from "./types";
@@ -57,18 +57,17 @@ async function refreshStatus(item: vscode.StatusBarItem) {
     }
 
     // total credits
-    const subs = await fetchSubscriptions(apiKey);
-    latestSubscriptions = subs;
-    const active = subs.filter((s) => s.isActive);
+    const activeSubs = await fetchActiveSubscriptions(apiKey);
+    latestSubscriptions = activeSubs;
 
-    const sum = calcTotalSum(active);
+    const sum = calcTotalSum(activeSubs);
     if (lastSum !== undefined && Math.abs(sum - lastSum) > 1e-6) {
       flashOnChange(item);
     }
     lastSum = sum;
     item.text = `$(credit-card) 剩余 $${sum.toFixed(2)}`;
 
-    item.tooltip = buildTooltip(active);
+    item.tooltip = buildTooltip(activeSubs);
     item.tooltip.isTrusted = true;
   } catch (err) {
     resetFlash(item);
