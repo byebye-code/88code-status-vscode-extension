@@ -4,18 +4,28 @@ import * as vscode from "vscode";
 import { readApiKey } from "./config";
 import { fetchSubscriptions } from "./api";
 import { calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
+import { showStatusMenu } from "./statusMenu";
 import type { Subscription } from "./types";
 
 let lastSum: number | undefined;
 let flashTimeout: NodeJS.Timeout | undefined;
+let latestSubscriptions: Subscription[] = [];
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   const statusItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusItem.name = "88code-status";
-  statusItem.command = "88code-status.refresh";
+  statusItem.command = "88code-status.menu";
   context.subscriptions.push(statusItem);
+
+  const menuCmd = vscode.commands.registerCommand("88code-status.menu", async () => {
+    await showStatusMenu(statusItem, {
+      ensureSubscriptions,
+      refreshStatus,
+    });
+  });
+  context.subscriptions.push(menuCmd);
 
   const refreshCmd = vscode.commands.registerCommand("88code-status.refresh", async () => {
     await refreshStatus(statusItem);
@@ -39,6 +49,7 @@ async function refreshStatus(item: vscode.StatusBarItem) {
     if (!apiKey) {
       resetFlash(item);
       lastSum = undefined;
+      latestSubscriptions = [];
       item.text = "剩余 $—";
       item.tooltip = new vscode.MarkdownString("未配置 API Key");
       item.tooltip.isTrusted = true;
@@ -47,6 +58,7 @@ async function refreshStatus(item: vscode.StatusBarItem) {
 
     // total credits
     const subs = await fetchSubscriptions(apiKey);
+    latestSubscriptions = subs;
     const active = subs.filter((s) => s.isActive);
 
     const sum = calcTotalSum(active);
@@ -61,6 +73,7 @@ async function refreshStatus(item: vscode.StatusBarItem) {
   } catch (err) {
     resetFlash(item);
     lastSum = undefined;
+    latestSubscriptions = [];
     item.text = "$(credit-card) 剩余 $—";
     const msg = (err as Error)?.message ?? "未知错误";
     item.tooltip = new vscode.MarkdownString(`刷新失败：${msg}`);
@@ -82,6 +95,14 @@ function resetFlash(item: vscode.StatusBarItem) {
     flashTimeout = undefined;
   }
   item.backgroundColor = undefined;
+}
+
+async function ensureSubscriptions(item: vscode.StatusBarItem): Promise<Subscription[]> {
+  if (latestSubscriptions.length) {
+    return latestSubscriptions;
+  }
+  await refreshStatus(item);
+  return latestSubscriptions;
 }
 
 function buildTooltip(subs: Subscription[]): vscode.MarkdownString {

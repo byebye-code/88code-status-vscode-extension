@@ -2,7 +2,7 @@
   "name": "88code-status-vscode-extension",
   "displayName": "88code Status",
   "description": "88code status extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "repository": "https://github.com/byebye-code/88code-status-vscode-extension",
   "license": "MIT",
   "publisher": "eigeen",
@@ -18,6 +18,10 @@
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
+      {
+        "command": "88code-status.menu",
+        "title": "88code: Show Subscription Menu"
+      },
       {
         "command": "88code-status.refresh",
         "title": "88code: Refresh Balance"
