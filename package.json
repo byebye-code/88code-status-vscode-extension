@@ -5,6 +5,7 @@
   "version": "0.1.0",
   "repository": "https://github.com/byebye-code/88code-status-vscode-extension",
   "license": "MIT",
+  "publisher": "eigeen",
   "engines": {
     "vscode": "^1.104.0"
   },
