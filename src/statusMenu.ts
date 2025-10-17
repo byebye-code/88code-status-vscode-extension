@@ -145,10 +145,10 @@ async function handleSubscriptionItem(sub: Subscription, item: vscode.StatusBarI
     );
 
     const output = result?.trim ? result.trim() : result;
-    await vscode.window.showInformationMessage(output || "重置成功");
+    vscode.window.showInformationMessage(output || "重置成功");
     await deps.refreshStatus(item);
   } catch (err) {
     const message = (err as Error)?.message ?? "未知错误";
-    await vscode.window.showErrorMessage(`重置失败：${message}`);
+    vscode.window.showErrorMessage(`重置失败：${message}`);
   }
 }
