@@ -91,7 +91,11 @@ export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMen
   await handleSubscriptionItem(selection.subscription, item, deps);
 }
 
-async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
+async function handleActionItem(
+  action: ActionId,
+  item: vscode.StatusBarItem,
+  deps: StatusMenuDeps
+) {
   if (action === "refresh") {
     await deps.refreshStatus(item);
     return;
@@ -101,27 +105,35 @@ async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, de
   }
 }
 
-async function handleSubscriptionItem(sub: Subscription, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
+async function handleSubscriptionItem(
+  sub: Subscription,
+  item: vscode.StatusBarItem,
+  deps: StatusMenuDeps
+) {
   const name = sub.subscriptionPlanName || "(未命名)";
+  const remainTimes = remainingResetTimes(sub);
+  const quickPickItems: Array<vscode.QuickPickItem & { action: SubscriptionAction }> = [];
+
+  // 有重置次数时可重置
+  if (remainTimes > 0) {
+    quickPickItems.push({
+      label: "$(sync) 重置额度",
+      description: "补满当前订阅额度，消耗一次重置次数",
+      action: "reset",
+    });
+  }
+
+  quickPickItems.push({
+    label: "$(circle-slash) 取消",
+    action: "cancel",
+  });
+
   const secondSelection = await vscode.window.showQuickPick<
     vscode.QuickPickItem & { action: SubscriptionAction }
-  >(
-    [
-      {
-        label: "$(sync) 重置额度",
-        description: "补满当前订阅额度，消耗一次重置次数",
-        action: "reset",
-      },
-      {
-        label: "$(circle-slash) 取消",
-        action: "cancel",
-      },
-    ],
-    {
-      placeHolder: `订阅「${name}」的操作`,
-      ignoreFocusOut: true,
-    },
-  );
+  >(quickPickItems, {
+    placeHolder: `订阅「${name}」的操作`,
+    ignoreFocusOut: true,
+  });
 
   if (!secondSelection || secondSelection.action === "cancel") {
     return;
@@ -141,7 +153,7 @@ async function handleSubscriptionItem(sub: Subscription, item: vscode.StatusBarI
       async () => {
         const msg = await deps.requestReset(sub.id);
         return msg;
-      },
+      }
     );
 
     const output = result?.trim ? result.trim() : result;
