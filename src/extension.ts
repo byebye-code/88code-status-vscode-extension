@@ -1,9 +1,9 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { readApiKey } from "./config";
-import { fetchActiveSubscriptions } from "./api";
+import { fetchActiveSubscriptions, resetCredits } from "./api";
 import { calcTotalPerSub, calcTotalSum, remainingResetTimes } from "./calc";
+import { readApiKey } from "./config";
 import { showStatusMenu } from "./statusMenu";
 import type { Subscription } from "./types";
 
@@ -23,6 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     await showStatusMenu(statusItem, {
       ensureSubscriptions,
       refreshStatus,
+      requestReset,
     });
   });
   context.subscriptions.push(menuCmd);
@@ -104,6 +105,14 @@ async function ensureSubscriptions(item: vscode.StatusBarItem): Promise<Subscrip
   return latestSubscriptions;
 }
 
+async function requestReset(subscriptionId: number): Promise<string> {
+  const apiKey = await readApiKey();
+  if (!apiKey) {
+    throw new Error("未配置 API Key");
+  }
+  return resetCredits(apiKey, subscriptionId);
+}
+
 function buildTooltip(subs: Subscription[]): vscode.MarkdownString {
   if (!subs.length) {
     return new vscode.MarkdownString("无活跃订阅");
@@ -115,7 +124,7 @@ function buildTooltip(subs: Subscription[]): vscode.MarkdownString {
     const totalFixed = `$${total.toFixed(2)}`;
     return `${
       s.subscriptionPlanName || "(未命名)"
-    } 当前/上限:${cur}/${limit} | 剩余重置:${remainingResetTimes(s)} | 总量:${totalFixed}`;
+    } 当前/上限:${cur}/${limit} | 剩余重置:${remainingResetTimes(s)} | 总余额:${totalFixed}`;
   });
   return new vscode.MarkdownString(lines.join("\n\n"));
 }

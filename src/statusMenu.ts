@@ -6,6 +6,8 @@ const MANAGE_SUBSCRIPTION_URL = "https://www.88code.org/my-subscription";
 
 type ActionId = "refresh" | "openManage";
 
+type SubscriptionAction = "reset" | "cancel";
+
 interface ActionMenuItem extends vscode.QuickPickItem {
   itemType: "action";
   action: ActionId;
@@ -26,6 +28,7 @@ type MenuEntry = ActionMenuItem | SubscriptionMenuItem | SeparatorMenuItem;
 export interface StatusMenuDeps {
   ensureSubscriptions: (item: vscode.StatusBarItem) => Promise<Subscription[]>;
   refreshStatus: (item: vscode.StatusBarItem) => Promise<void>;
+  requestReset: (subscriptionId: number) => Promise<string>;
 }
 
 export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMenuDeps) {
@@ -33,7 +36,7 @@ export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMen
 
   const actionItems: ActionMenuItem[] = [
     {
-      label: "$(refresh) 刷新余额",
+      label: "$(refresh) 刷新",
       description: "立即同步最新额度",
       itemType: "action",
       action: "refresh",
@@ -52,7 +55,7 @@ export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMen
     const total = calcTotalPerSub(sub).toFixed(2);
     return {
       label: `$(organization) ${sub.subscriptionPlanName || "(未命名)"}`,
-      description: `当前:$${cur} | 总量:$${total}`,
+      description: `当前:$${cur} | 总余额:$${total}`,
       detail: `上限:$${limit} · 剩余重置:${remainingResetTimes(sub)} · 周期:${
         sub.billingCycleDesc || sub.billingCycle
       }`,
@@ -85,8 +88,7 @@ export async function showStatusMenu(item: vscode.StatusBarItem, deps: StatusMen
     return;
   }
 
-  // 暂时无点击事件，未来API提供更多接口后再处理
-  return;
+  await handleSubscriptionItem(selection.subscription, item, deps);
 }
 
 async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
@@ -96,5 +98,57 @@ async function handleActionItem(action: ActionId, item: vscode.StatusBarItem, de
   }
   if (action === "openManage") {
     await vscode.env.openExternal(vscode.Uri.parse(MANAGE_SUBSCRIPTION_URL));
+  }
+}
+
+async function handleSubscriptionItem(sub: Subscription, item: vscode.StatusBarItem, deps: StatusMenuDeps) {
+  const name = sub.subscriptionPlanName || "(未命名)";
+  const secondSelection = await vscode.window.showQuickPick<
+    vscode.QuickPickItem & { action: SubscriptionAction }
+  >(
+    [
+      {
+        label: "$(sync) 重置额度",
+        description: "补满当前订阅额度，消耗一次重置次数",
+        action: "reset",
+      },
+      {
+        label: "$(circle-slash) 取消",
+        action: "cancel",
+      },
+    ],
+    {
+      placeHolder: `订阅「${name}」的操作`,
+      ignoreFocusOut: true,
+    },
+  );
+
+  if (!secondSelection || secondSelection.action === "cancel") {
+    return;
+  }
+
+  if (secondSelection.action !== "reset") {
+    return;
+  }
+
+  try {
+    const result = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: `正在重置订阅「${name}」额度...`,
+        cancellable: false,
+      },
+      async () => {
+        const msg = await deps.requestReset(sub.id);
+        return msg;
+      },
+    );
+
+    const output = result?.trim ? result.trim() : result;
+    await vscode.window.showInformationMessage(output || "重置成功");
+    await deps.refreshStatus(item);
+  } catch (err) {
+    const message = (err as Error)?.message ?? "未知错误";
+    await vscode.window.showErrorMessage(`重置失败：${message}`);
   }
 }

@@ -9,7 +9,7 @@ Repo: https://github.com/byebye-code/88code-status-vscode-extension
 ## 功能
 
 - 状态栏显示：`剩余 $<sum>`，数值变化时短暂闪烁提示。
-- Tooltip：按“活跃订阅”逐条显示：`[计划名] 当前/上限:$<cur>/$<limit> | 剩余重置:<n> | 总量:$<cur + resetTimes*creditLimit>`。
+- Tooltip：按“活跃订阅”逐条显示：`[计划名] 当前/上限:$<cur>/$<limit> | 剩余重置:<n> | 总余额:$<cur + resetTimes*creditLimit>`。
 - 命令：`88code-status.refresh`（命令面板：88code: Refresh Balance）手动刷新。
 - 自动刷新：每 1 分钟刷新一次。
 
@@ -20,7 +20,7 @@ https://www.88code.org
 ## 金额计算
 
 - 主显示值：对所有“活跃订阅”累加 `currentCredits + resetTimes*creditLimit`。
-- Tooltip“总量”：同上；`PAY_PER_USE` 订阅的重置次数视为 0。
+- Tooltip“总余额”：同上；`PAY_PER_USE` 订阅的重置次数视为 0。
 
 ## 配置（API Key）
 
