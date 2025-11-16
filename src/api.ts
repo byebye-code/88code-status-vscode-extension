@@ -63,7 +63,12 @@ export async function fetchSubscriptions(apiKey: string): Promise<Subscription[]
 
 export async function fetchActiveSubscriptions(apiKey: string): Promise<Subscription[]> {
   const subs = await fetchSubscriptions(apiKey);
-  return subs.filter((sub) => sub.isActive);
+  const now = new Date();
+
+  return subs.filter((sub) => {
+    // 检查激活状态和过期时间
+    return sub.isActive && new Date(sub.endDate) > now;
+  });
 }
 
 export async function resetCredits(apiKey: string, subscriptionId: number): Promise<string> {
