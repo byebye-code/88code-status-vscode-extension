@@ -2,7 +2,7 @@
   "name": "88code-status-vscode-extension",
   "displayName": "88code Status",
   "description": "88code status extension",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "repository": "https://github.com/byebye-code/88code-status-vscode-extension",
   "license": "MIT",
   "publisher": "eigeen",

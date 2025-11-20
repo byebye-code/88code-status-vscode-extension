@@ -5,6 +5,15 @@ const SUB_ENDPOINT = "/api/subscription";
 const USAGE_ENDPOINT = "/api/usage";
 const RESET_ENDPOINT = "/api/reset-credits";
 
+interface Response<T> {
+  code: number;
+  level?: any;
+  msg: string;
+  ok: boolean;
+  data?: T;
+  dataType?: number;
+}
+
 function createAbortController(): AbortController | undefined {
   if (typeof globalThis.AbortController === "function") {
     const Ctor = globalThis.AbortController as typeof AbortController;
@@ -13,7 +22,7 @@ function createAbortController(): AbortController | undefined {
   return undefined;
 }
 
-async function postJson(url: string, apiKey: string): Promise<Response> {
+async function postJson<T>(url: string, apiKey: string): Promise<T | null> {
   const ctrl = createAbortController();
   const timeout = setTimeout(() => {
     try {
@@ -33,11 +42,24 @@ async function postJson(url: string, apiKey: string): Promise<Response> {
   }
 
   try {
-    const res = await fetch(url, init);
-    if (!res || typeof res.ok !== "boolean") {
+    const r = await fetch(url, init);
+    if (!r || typeof r.ok !== "boolean") {
       throw new Error("Invalid response");
     }
-    return res;
+    if (!r.ok) {
+      throw new Error(`HTTP error: ${r.status}`);
+    }
+
+    const resp = (await r.json()) as Response<T>;
+    if (!resp || typeof resp !== "object") {
+      throw new Error("Invalid response body: not an object");
+    }
+
+    if (!resp.ok) {
+      throw new Error(`Error response: ${resp.code}: ${resp.msg}`);
+    }
+
+    return resp.data ?? null;
   } finally {
     clearTimeout(timeout);
   }
@@ -48,17 +70,13 @@ export async function fetchSubscriptions(apiKey: string): Promise<Subscription[]
     throw new Error("API key missing");
   }
 
-  const res = await postJson(`${BASE_URL}${SUB_ENDPOINT}`, apiKey);
-  if (!res.ok) {
-    const status = res.status ?? "unknown";
-    throw new Error(`HTTP ${status}`);
+  const data = await postJson<Subscription[]>(`${BASE_URL}${SUB_ENDPOINT}`, apiKey);
+
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid response body: not an array");
   }
 
-  const body = (await res.json()) as unknown;
-  if (!Array.isArray(body)) {
-    throw new Error("Invalid response body");
-  }
-  return body as Subscription[];
+  return data;
 }
 
 export async function fetchActiveSubscriptions(apiKey: string): Promise<Subscription[]> {
@@ -79,20 +97,7 @@ export async function resetCredits(apiKey: string, subscriptionId: number): Prom
     throw new Error("Invalid subscription id");
   }
 
-  const res = await postJson(`${BASE_URL}${RESET_ENDPOINT}/${subscriptionId}`, apiKey);
-  if (!res.ok) {
-    const status = res.status ?? "unknown";
-    let message = `HTTP ${status}`;
-    try {
-      const text = await res.text();
-      if (text) {
-        message += `: ${text}`;
-      }
-    } catch {}
-    throw new Error(message);
-  }
+  const _ = await postJson(`${BASE_URL}${RESET_ENDPOINT}/${subscriptionId}`, apiKey);
 
-  const textBody = await res.text();
-  const message = typeof textBody === "string" ? textBody.trim() : "";
-  return message || "重置成功";
+  return "重置成功";
 }
